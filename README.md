@@ -1,1 +1,2 @@
 # JuegodeChacales
+## Paso 1
