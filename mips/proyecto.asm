@@ -32,6 +32,12 @@ inicializar_posiciones:
     j inicializar_posiciones  # Volver al inicio del bucle
 
 fin_inicializacion:
+
+	# Llamar a la función shuffle_posiciones
+    la $a0, posiciones    # Pasar la dirección base del array `posiciones` a $a0
+    li $a1, 12            # Pasar el tamaño del array `posiciones` a $a1
+    jal shuffle_posiciones  # Llamar a la función shuffle_posiciones
+
     # Llamar a la función imprimir_tablero
     la $a0, tablero       # Pasar la dirección base de tablero a $a0
    	li $a1, 12            # Pasar el tamaño del tablero a $a1
@@ -103,4 +109,45 @@ imprimir_posiciones_nueva_linea:
     li $v0, 4
     la $a0, nuevo_linea
     syscall
+    jr $ra                # Volver a la dirección de retorno
+    
+
+# Función para mezclar el array posiciones
+shuffle_posiciones:
+    # Argumentos:
+    # $a0 = dirección base del array `posiciones`
+    # $a1 = tamaño del array `posiciones`
+    move $t0, $a0         # Mover la dirección base del array `posiciones` a $t0
+    move $t1, $a1         # Mover el tamaño del array `posiciones` a $t1
+
+    # Definir el número de mezclas
+    li $t4, 24            # Definir un número de mezclas (2 veces el tamaño del array)
+
+shuffle_loop:
+    beq $t4, $zero, fin_shuffle  # Si hemos hecho todas las mezclas, salir del bucle
+
+    # Generar el primer índice aleatorio
+    li $v0, 42
+    syscall
+    mul $t2, $a0, 4       # Calcular el desplazamiento en bytes (tamaño del entero)
+
+    # Generar el segundo índice aleatorio
+    li $v0, 42            # Syscall para generar un número aleatorio
+    syscall
+    mul $t3, $a0, 4       # Calcular el desplazamiento en bytes (tamaño del entero)
+
+    # Intercambiar los valores en los dos índices aleatorios
+    add $t5, $t0, $t2     # Calcular la dirección del primer índice
+    lw $t6, 0($t5)        # Cargar el valor en el primer índice
+
+    add $t7, $t0, $t3     # Calcular la dirección del segundo índice
+    lw $t8, 0($t7)        # Cargar el valor en el segundo índice
+
+    sw $t8, 0($t5)        # Almacenar el valor del segundo índice en el primer índice
+    sw $t6, 0($t7)        # Almacenar el valor del primer índice en el segundo índice
+
+    subi $t4, $t4, 1      # Decrementar el contador de mezclas
+    j shuffle_loop        # Volver al inicio del bucle
+
+fin_shuffle:
     jr $ra                # Volver a la dirección de retorno
