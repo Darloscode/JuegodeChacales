@@ -1,7 +1,10 @@
 .data
+	nuevo_linea: .asciiz "\n"  # Nueva línea para formato de salida
+	.align 2
 	tablero: .space 12 # Espacio para 12 bytes, cada uno representa una casilla
 	posiciones: .space 48  # Espacio para 12 enteros (12 * 4 bytes = 48 bytes)
-	nuevo_linea: .asciiz "\n"  # Nueva línea para formato de salida
+	chacales: .space 16    # Espacio para 4 enteros (4 * 4 bytes = 16 bytes)
+	tesoros: .space 32     # Espacio para 8 enteros (8 * 4 bytes = 32 bytes)
 
 
 .text
@@ -25,28 +28,69 @@ inicializar_posiciones:
     li $t2, 12            # Número de enteros a inicializar
 
 loop_posiciones:
-	beq $t2, $zero, fin_inicializacion  # Si hemos inicializado los 12 enteros, salir del bucle
+	beq $t2, $zero, fin_posiciones  # Si hemos inicializado los 12 enteros, salir del bucle
     sw $t1, 0($s0)        # Almacenar el valor de $t1 en la posición actual del array
     addi $s0, $s0, 4      # Incrementar el puntero de la dirección del array
     addi $t1, $t1, 1      # Incrementar el valor de $t1 en 1
     subi $t2, $t2, 1      # Decrementar el contador de enteros por inicializar
     j loop_posiciones  # Volver al inicio del bucle
 
-fin_inicializacion:
+fin_posiciones:
     # Llamar a la función shuffle_posiciones
     la $a0, posiciones    # Pasar la dirección base del array `posiciones` a $a0
     li $a1, 12            # Pasar el tamaño del array `posiciones` a $a1
     jal shuffle_posiciones  # Llamar a la función shuffle_posiciones
-
+    
+iniciar_copia:
+	# Direcciones base
+	li $t0, 0 
+	la $s0, posiciones
+	la $s1, chacales
+	la $s2, tesoros
+	
+copiar:
+	beq $t0, 12, salir
+	addi $t0, $t0, 1
+	# Copiar indices chacales
+	bge $t0, 5, else
+	lw $t1, 0($s0)
+	sw $t1, 0($s1)
+	addi $s0, $s0, 4
+	addi $s1, $s1, 4
+	j copiar
+	
+else: 
+	# copiar indicces tesoros
+	lw $t1, 0($s0)
+	sw $t1, 0($s2)
+	addi $s0, $s0, 4
+	addi $s2, $s2, 4
+	j copiar
+	
+salir:
     # Llamar a la función imprimir_tablero
     la $a0, tablero       # Pasar la dirección base de tablero a $a0
    	li $a1, 12            # Pasar el tamaño del tablero a $a1
     jal imprimir_tablero  # Llamar a la función imprimir_tablero
     
-	# Llamar a la función imprimir_posiciones
-    la $a0, posiciones    # Pasar la dirección base del array `posiciones` a $a0
-    li $a1, 12            # Pasar el tamaño del array `posiciones` a $a1
-    jal imprimir_posiciones  # Llamar a la función imprimir_posiciones
+    # imprimir chacales
+	li $t0, 0 
+	la $s0, tesoros
+	li $v0, 1
+	
+imprimir:
+	beq $t0, 8, fin_imprimir
+	lw $a0, 0($s0)
+	syscall
+	addi $t0, $t0, 1
+	addi $s0, $s0, 4
+	j imprimir
+	
+fin_imprimir:
+	# Imprimir un salto de línea
+    la $a0, nuevo_linea   # Cargar la dirección de la cadena en $a0
+    li $v0, 4         # Código del servicio para imprimir cadena
+    syscall           # Llamada al sistema para imprimir la cadena
     
     # Terminar el programa
     li $v0, 10            # Syscall para salir del programa
@@ -79,35 +123,6 @@ imprimir_nueva_linea:
     la $a0, nuevo_linea
     syscall
     jr $ra                # Volver a la dirección de retorno  	
-    
-
-# Función para imprimir el array posiciones
-imprimir_posiciones:
-    # Argumentos:
-    # $a0 = dirección base del array `posiciones`
-    # $a1 = tamaño del array `posiciones`
-    move $t0, $a0         # Mover la dirección base del array `posiciones` a $t0
-    move $t2, $a1         # Mover el tamaño del array `posiciones` a $t2
-
-imprimir_posiciones_loop:
-    beq $t2, $zero, imprimir_posiciones_nueva_linea  # Si hemos impreso los 12 enteros, salir del bucle
-    lw $t3, 0($t0)        # Cargar el valor de la posición actual del array `posiciones` en $t3
-    move $a0, $t3         # Mover el valor a $a0 para imprimir
-    li $v0, 1             # Syscall para imprimir un entero
-    syscall
-    li $a0, 32            # ASCII de espacio
-    li $v0, 11            # Syscall para imprimir un carácter
-    syscall
-    addi $t0, $t0, 4      # Incrementar el puntero de la dirección del array
-    subi $t2, $t2, 1      # Decrementar el contador de enteros por imprimir
-    j imprimir_posiciones_loop  # Volver al inicio del bucle
-
-imprimir_posiciones_nueva_linea:
-    # Imprimir una nueva línea después de imprimir el array `posiciones`
-    li $v0, 4
-    la $a0, nuevo_linea
-    syscall
-    jr $ra                # Volver a la dirección de retorno
     
 # Función para mezclar el array posiciones
 shuffle_posiciones:
