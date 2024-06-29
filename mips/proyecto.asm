@@ -24,16 +24,16 @@ inicializar_posiciones:
     li $t1, 0             # Inicializar el primer valor en 0
     li $t2, 12            # Número de enteros a inicializar
 
+loop_posiciones:
 	beq $t2, $zero, fin_inicializacion  # Si hemos inicializado los 12 enteros, salir del bucle
     sw $t1, 0($s0)        # Almacenar el valor de $t1 en la posición actual del array
     addi $s0, $s0, 4      # Incrementar el puntero de la dirección del array
     addi $t1, $t1, 1      # Incrementar el valor de $t1 en 1
     subi $t2, $t2, 1      # Decrementar el contador de enteros por inicializar
-    j inicializar_posiciones  # Volver al inicio del bucle
+    j loop_posiciones  # Volver al inicio del bucle
 
 fin_inicializacion:
-
-	# Llamar a la función shuffle_posiciones
+    # Llamar a la función shuffle_posiciones
     la $a0, posiciones    # Pasar la dirección base del array `posiciones` a $a0
     li $a1, 12            # Pasar el tamaño del array `posiciones` a $a1
     jal shuffle_posiciones  # Llamar a la función shuffle_posiciones
@@ -48,8 +48,6 @@ fin_inicializacion:
     li $a1, 12            # Pasar el tamaño del array `posiciones` a $a1
     jal imprimir_posiciones  # Llamar a la función imprimir_posiciones
     
-
-
     # Terminar el programa
     li $v0, 10            # Syscall para salir del programa
     syscall
@@ -111,7 +109,6 @@ imprimir_posiciones_nueva_linea:
     syscall
     jr $ra                # Volver a la dirección de retorno
     
-
 # Función para mezclar el array posiciones
 shuffle_posiciones:
     # Argumentos:
