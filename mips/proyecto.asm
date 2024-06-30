@@ -18,7 +18,12 @@
 	mensaje_chacales: .asciiz "\nN° de chacales encontrados: "
 	progreso: .asciiz "\nProgreso:"
 	separacion: .asciiz "--------------------------------------------\n"
-	
+
+	mensaje_gano: .asciiz "\n¡Felicidades! ¡Has encontrado todos los tesoros y ganado el juego!"
+	mensaje_perdio: .asciiz "\n¡Has perdido! ¡Has encontrado todos los chacales! :'( "
+	mensaje_default: .asciiz "\nHas descubierto el mismo número de casilla 3 veces consecutivas. Has perdido el juego."
+	mensaje_adventencia: .asciiz "Advertencia: Hay un número que ya ha salido dos veces. Tenga cuidado!!"
+
 	casillas_descubiertas: .space 12   # Arreglo para casillas descubiertas
 	casillas_repetidas: .space 48   # Arreglo para contar repeticiones, Espacio para 12 enteros (12 * 4 bytes = 48 bytes)
     	chacales_encontrados: .word 0   # Contador de chacales encontrados
@@ -102,9 +107,9 @@ Loop:
 	li $t4, 4
 	li $t5, 3
 	
-	beq $t0, $t3, finalizar
-	beq $t1, $t4, finalizar
-	beq $t2, $t5, finalizar
+	beq $t0, $t3, perdio
+	beq $t1, $t4, gano
+	beq $t2, $t5, defaut
 	
 	li $v0, 4
     	la $a0, separacion
@@ -188,6 +193,23 @@ mostrar_progreso:
 continuar:
 	jal mostrar_progreso
     	j Loop
+
+gano:
+	li $v0, 4
+    	la $a0, mensaje_gano
+    	syscall
+	j finalizar
+	
+perdio:
+	li $v0, 4
+    	la $a0, mensaje_perdio
+    	syscall
+	j finalizar
+defaut:
+	li $v0, 4
+    	la $a0, mensaje_perdio
+    	syscall
+	j finalizar
 
 finalizar:
 	li $v0, 4
