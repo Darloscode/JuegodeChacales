@@ -17,9 +17,12 @@
 	mensaje_dinero: .asciiz "\nDinero acumulado: "
 	mensaje_chacales: .asciiz "\nN° de chacales encontrados: "
 	progreso: .asciiz "\nProgreso:"
-	separacion: .asciiz "--------------------------------------------\n"
+	separacion: .asciiz "\n--------------------------------------------\n"
 	numero_casilla: .asciiz "\nNumero de casilla: "
-
+	
+	mensaje_progreso_chacal: .asciiz "\nHas encontrado un chacal!"
+	mensaje_progreso_tesoro: .asciiz "\nHas encontrado un tesoro!"
+	
 	mensaje_gano: .asciiz "\n¡Felicidades! ¡Has encontrado todos los tesoros y ganado el juego!"
 	mensaje_perdio: .asciiz "\n¡Has perdido! ¡Has encontrado todos los chacales! :'( "
 	mensaje_default: .asciiz "\nHas descubierto el mismo número de casilla 3 veces consecutivas. Has perdido el juego."
@@ -30,8 +33,8 @@
     chacales_encontrados: .word 0   # Contador de chacales encontrados
     tesoros_encontrados: .word 0   # Contador de tesoros encontrados
     dinero_acumulado: .word 0   # Dinero acumulado
-    turnos_consecutivos_repetidos: .word 0   # Contador de turnos repetidos
-    max_turnos_repetidos_permitidos: .word 3   # Máximo de turnos repetidos permitidos
+    turnos_consecutivos_repetidos: .word -1 # Contador de turnos repetidos
+    cantidad_repetidos: .word 0   # Máximo de turnos repetidos permitidos
     casilla: .word 0 # casilla aleatoria
 .text
 .globl main
@@ -96,68 +99,68 @@ else:
 
 #Nuevo inicio
 Loop:
-	lw $t0, chacales_encontrados
-	move $t0, $t0
-	
 	lw $t1, tesoros_encontrados
 	move $t1, $t1
 	
-	lw $t2, turnos_consecutivos_repetidos
+	lw $t2, cantidad_repetidos
 	move $t2, $t2	
 	
-	li $t3, 8
 	li $t4, 4
 	li $t5, 3
 	
-	beq $t0, $t3, perdio
-	beq $t1, $t4, gano
 	beq $t2, $t5, defaut
+	beq $t1, $t4, gano
 	
 	li $v0, 4
-    la $a0, separacion
-    syscall
+    	la $a0, separacion
+    	syscall
     	
 	li $v0, 4
-    la $a0, nuevo_linea
-    syscall
+    	la $a0, nuevo_linea
+    	syscall
     	
     	#Seleccionando un número....
    	#Codigo para elegir un número al azar 
    	#Mostar número
    	
    	# Llamar a la syscall para generar un número aleatorio
-    li $v0, 42
-    li $a1, 12
-    syscall
-    sw $a0, casilla
+    	li $v0, 42
+    	li $a1, 12
+    	syscall
+    	sw $a0, casilla
 
-    # Imprimir el número aleatorio generado
-    li $v0, 4
-    la $a0, numero_casilla
-    syscall
+    	# Imprimir el número aleatorio generado
+    	li $v0, 4
+    	la $a0, numero_casilla
+    	syscall
     
-    li $v0, 1
-    lw $a0, casilla
-    syscall
+    	li $v0, 1
+    	lw $a0, casilla
+    	syscall
     
-    li $v0, 4
-    la $a0, nuevo_linea
-    syscall
-   	
+    	li $v0, 4
+    	la $a0, nuevo_linea
+    	syscall
+    	
+    	li $v0, 4
+    	la $a0, nuevo_linea
+    	syscall
+    	
     	# Llamar a la función imprimir_tablero
 	la $a0, tablero       # Pasar la dirección base de tablero a $a0
     	li $a1, 12            # Pasar el tamaño del tablero a $a1
     	jal imprimir_tablero  # Llamar a la función imprimir_tablero
     
-    # contar chacales y tesoros
-    lw $t0, chacales_encontrados
-    lw $t1, tesoros_encontrados
+    	# contar chacales y tesoros
+    	lw $t0, chacales_encontrados
+    	lw $t1, tesoros_encontrados
     	
-    la $t2, chacales
-    li $t3, 0 # contador para el loop
-    li $t6, 0 # copiar numero aletorio anterior
-    lw $t8, max_turnos_repetidos_permitidos # veces que se puede repetir un numero
-    lw $t7, turnos_consecutivos_repetidos # veces que se repitio el numero
+    	la $t2, chacales
+    	li $t3, 0 # contador para el loop
+    	li $t6, 0 # copiar numero aletorio anterior
+    	lw $t8, cantidad_repetidos # veces que se puede repetir un numero
+    	lw $t7, turnos_consecutivos_repetidos # veces que se repitio el numero
+    	lw $t9, dinero_acumulado
    
 actualizar_contadores:
 	# Comparar numero aleatorio con arreglo de chacales
@@ -170,7 +173,15 @@ actualizar_contadores:
 	addi $t0, $t0, 1
 	addi $t4, $t4, 1
 	sw $t0, chacales_encontrados
-	jal mostrar_progreso
+	li $v0, 4
+    	la $a0, mensaje_progreso_chacal
+    	syscall
+    	jal mostrar_progreso
+    	
+	lw $t0, chacales_encontrados
+	move $t0, $t0
+    	li $t3, 4
+    	beq $t0, $t3, perdio
 	j validacion
 	
 repeticiones_maxima:
@@ -181,9 +192,20 @@ caso_tesoros:
 	# si no es un tesoro, es un chacal
 	addi $t1, $t1, 1
 	sw $t1, tesoros_encontrados
-   
+	addi $t9, $t9, 100
+	sw $t9, dinero_acumulado
+	li $v0, 4
+    	la $a0, mensaje_progreso_tesoro
+    	syscall
 	jal mostrar_progreso
-
+	
+	lw $t2, tesoros_encontrados
+	move $t2, $t2
+	
+	li $t4, 4
+	beq  $t1, $t4, gano
+	j validacion
+	
 validacion:
     	li $v0, 4
     	la $a0,nuevo_linea
@@ -245,7 +267,6 @@ mostrar_progreso:
     	jr $ra
     	
 continuar:
-	jal mostrar_progreso
     	j Loop
 
 gano:
