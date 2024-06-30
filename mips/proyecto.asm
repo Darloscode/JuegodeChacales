@@ -89,8 +89,22 @@ else:
 
 #Nuevo inicio
 Loop:
-	#lw $t0, chacales_encontrados
-	#move $t0, $t0
+	lw $t0, chacales_encontrados
+	move $t0, $t0
+	
+	lw $t1, tesoros_encontrados
+	move $t1, $t1
+	
+	lw $t2, turnos_consecutivos_repetidos
+	move $t2, $t2	
+	
+	li $t3, 8
+	li $t4, 4
+	li $t5, 3
+	
+	beq $t0, $t3, finalizar
+	beq $t1, $t4, finalizar
+	beq $t2, $t5, finalizar
 	
 	li $v0, 4
     	la $a0, separacion
