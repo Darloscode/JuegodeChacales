@@ -39,6 +39,10 @@
 .globl main
 
 main:
+	li $v0, 4
+    	la $a0, bienvenido
+    	syscall
+	
 	la $t0, tablero       # Cargar la dirección base de tablero en $s0
     	li $t1, 79            # Cargar el valor ASCII de 'O' en $t1
     	li $t2, 12            # Número de casillas a inicializar
