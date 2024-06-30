@@ -173,7 +173,7 @@ comparar_numeros:
 		bne $t2, 3, iniciar_tablero
 		j Loop
     	
-    	
+iniciar_tablero:
     	# Llamar a la función imprimir_tablero
 	la $a0, tablero       # Pasar la dirección base de tablero a $a0
     	li $a1, 12            # Pasar el tamaño del tablero a $a1
