@@ -146,6 +146,34 @@ Loop:
     	la $a0, nuevo_linea
     	syscall
     	
+    	# Comparar numero anterior con actual
+    	lw $t0, casilla
+    	lw $t1, turnos_consecutivos_repetidos
+    	move $t1, $t1
+    	lw $t2, cantidad_repetidos
+    	move $t2, $t2
+    	
+    	beq $t0, $t1, iguales
+    	#difentes
+    	li $t2, 0
+		sw $t2, cantidad_repetidos
+		sw $t0, turnos_consecutivos_repetidos
+    	
+    	j comparar_numeros
+    	
+iguales:
+		#iguales
+		addi $t2, $t2, 1
+    	sw $t2, cantidad_repetidos
+    	sw $t0, turnos_consecutivos_repetidos
+
+		
+comparar_numeros:
+		# ver si ya se repitio 3 veces
+		bne $t2, 3, iniciar_tablero
+		j Loop
+    	
+    	
     	# Llamar a la función imprimir_tablero
 	la $a0, tablero       # Pasar la dirección base de tablero a $a0
     	li $a1, 12            # Pasar el tamaño del tablero a $a1
