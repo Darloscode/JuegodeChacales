@@ -12,13 +12,13 @@
 	repetir: .asciiz "\nIngrese correctamente la palabra si o no (en minusculas)\n"
 	si: .asciiz "si"
 	no: .asciiz "no"
-	agradecimiento: .asciiz "\n\nGracias por jugar!\nEstos son los resultados:"
+	agradecimiento: .asciiz "\nGracias por jugar!\nEstos son los resultados:"
 	mensaje_tesosoros: .asciiz "\nN° de tesoros encontrados: "
 	mensaje_dinero: .asciiz "\nDinero acumulado: "
 	mensaje_chacales: .asciiz "\nN° de chacales encontrados: "
 	progreso: .asciiz "\nProgreso:"
 	separacion: .asciiz "\n--------------------------------------------\n"
-	numero_casilla: .asciiz "\nNumero de casilla: "
+	numero_casilla: .asciiz "Numero de casilla: "
 	
 	mensaje_progreso_chacal: .asciiz "\nHas encontrado un chacal!"
 	mensaje_progreso_tesoro: .asciiz "\nHas encontrado un tesoro!"
@@ -26,7 +26,7 @@
 	mensaje_gano: .asciiz "\n¡Felicidades! ¡Has encontrado todos los tesoros y ganado el juego!"
 	mensaje_perdio: .asciiz "\n¡Has perdido! ¡Has encontrado todos los chacales! :'( "
 	mensaje_default: .asciiz "\nHas descubierto el mismo número de casilla 3 veces consecutivas. Has perdido el juego."
-	mensaje_adventencia: .asciiz "Advertencia: Hay un número que ya ha salido dos veces. Tenga cuidado!!"
+	mensaje_adventencia: .asciiz "Advertencia: Este número ha salido dos veces. Tenga cuidado!!\n\n"
 
 	casillas_descubiertas: .space 12   # Arreglo para casillas descubiertas
 	casillas_repetidas: .space 48   # Arreglo para contar repeticiones, Espacio para 12 enteros (12 * 4 bytes = 48 bytes)
@@ -34,7 +34,7 @@
     tesoros_encontrados: .word 0   # Contador de tesoros encontrados
     dinero_acumulado: .word 0   # Dinero acumulado
     turnos_consecutivos_repetidos: .word -1 # Contador de turnos repetidos
-    cantidad_repetidos: .word 0   # Máximo de turnos repetidos permitidos
+    cantidad_repetidos: .word 0 # Máximo de turnos repetidos permitidos
     casilla: .word 0 # casilla aleatoria
 .text
 .globl main
@@ -99,18 +99,6 @@ else:
 
 #Nuevo inicio
 Loop:
-	lw $t1, tesoros_encontrados
-	move $t1, $t1
-	
-	lw $t2, cantidad_repetidos
-	move $t2, $t2	
-	
-	li $t4, 4
-	li $t5, 3
-	
-	beq $t2, $t5, defaut
-	beq $t1, $t4, gano
-	
 	li $v0, 4
     	la $a0, separacion
     	syscall
@@ -128,6 +116,10 @@ Loop:
     	li $a1, 12
     	syscall
     	sw $a0, casilla
+    	#lw $t0, casilla
+    	#li $t0, 3
+    	#sw $t0, casilla
+	
 
     	# Imprimir el número aleatorio generado
     	li $v0, 4
@@ -137,6 +129,8 @@ Loop:
     	li $v0, 1
     	lw $a0, casilla
     	syscall
+    	
+    	
     
     	li $v0, 4
     	la $a0, nuevo_linea
@@ -163,21 +157,35 @@ Loop:
     	
 iguales:
 		#iguales
-		addi $t2, $t2, 1
+	addi $t2, $t2, 1
     	sw $t2, cantidad_repetidos
     	sw $t0, turnos_consecutivos_repetidos
 
 		
 comparar_numeros:
 		# ver si ya se repitio 3 veces
-		bne $t2, 3, iniciar_tablero
-		j Loop
-    	
-iniciar_tablero:
-    	# Llamar a la función imprimir_tablero
+		li $t9, 2
+		li $t8, 1
+		beq $t2, $t8, advertencia		
+		bne $t2, $t9, iniciar_tablero
+		j  defaut
+advertencia:
+	li $v0, 4
+    	la $a0, mensaje_adventencia
+    	syscall
 	la $a0, tablero       # Pasar la dirección base de tablero a $a0
     	li $a1, 12            # Pasar el tamaño del tablero a $a1
     	jal imprimir_tablero  # Llamar a la función imprimir_tablero
+    	jal mostrar_progreso
+    	j validacion
+    	
+iniciar_tablero:
+
+
+    	# Llamar a la función imprimir_tablero
+	#la $a0, tablero       # Pasar la dirección base de tablero a $a0
+    	#li $a1, 12            # Pasar el tamaño del tablero a $a1
+    	#jal imprimir_tablero  # Llamar a la función imprimir_tablero
     
     	# contar chacales y tesoros
     	lw $t0, chacales_encontrados
@@ -201,6 +209,17 @@ actualizar_contadores:
 	addi $t0, $t0, 1
 	addi $t4, $t4, 1
 	sw $t0, chacales_encontrados
+	
+	lw $t0, casilla
+	addi $t0, $t0, -1
+	la $t2, tablero
+	add $t2, $t2, $t0
+    	li $t5, 67                # Cargar el carácter 'X' en $t5
+    	sb $t5, 0($t2)
+	la $a0, tablero       # Pasar la dirección base de tablero a $a0
+    	li $a1, 12            # Pasar el tamaño del tablero a $a1
+    	jal imprimir_tablero  # Llamar a la función imprimir_tablero
+
 	li $v0, 4
     	la $a0, mensaje_progreso_chacal
     	syscall
@@ -217,6 +236,16 @@ repeticiones_maxima:
 	j finalizar
 	
 caso_tesoros:
+	lw $t0, casilla
+	addi $t0, $t0, -1
+	la $t2, tablero
+	add $t2, $t2, $t0
+    	li $t5, 88                # Cargar el carácter 'X' en $t5
+    	sb $t5, 0($t2)
+	la $a0, tablero       # Pasar la dirección base de tablero a $a0
+    	li $a1, 12            # Pasar el tamaño del tablero a $a1
+    	jal imprimir_tablero  # Llamar a la función imprimir_tablero
+    	  	  	  	
 	# si no es un tesoro, es un chacal
 	addi $t1, $t1, 1
 	sw $t1, tesoros_encontrados
@@ -304,17 +333,29 @@ gano:
 	j finalizar
 	
 perdio:
+	lw $t0, dinero_acumulado
+    	li $t0, 0                
+    	sw $t0, dinero_acumulado
+    	
 	li $v0, 4
     	la $a0, mensaje_perdio
     	syscall
 	j finalizar
 defaut:
+	lw $t0, dinero_acumulado
+    	li $t0, 0                
+    	sw $t0, dinero_acumulado
+    	
 	li $v0, 4
-    	la $a0, mensaje_perdio
+    	la $a0, mensaje_default
     	syscall
 	j finalizar
 
 finalizar:
+	li $v0, 4
+    	la $a0, separacion
+    	syscall
+
 	li $v0, 4
     	la $a0, agradecimiento
     	syscall
