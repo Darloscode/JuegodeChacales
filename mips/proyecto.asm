@@ -5,8 +5,27 @@
 	posiciones: .space 48  # Espacio para 12 enteros (12 * 4 bytes = 48 bytes)
 	chacales: .space 16    # Espacio para 4 enteros (4 * 4 bytes = 16 bytes)
 	tesoros: .space 32     # Espacio para 8 enteros (8 * 4 bytes = 32 bytes)
-
-
+	espacio: .asciiz " "
+	bienvenido: .asciiz "----Bienvenido al juego de los chacales----"
+	pregunta: .asciiz "¿Quieres seguir jugando? (si/no): "
+	respuesta: .space 3
+	repetir: .asciiz "\nIngrese correctamente la palabra si o no (en minusculas)\n"
+	si: .asciiz "si"
+	no: .asciiz "no"
+	agradecimiento: .asciiz "\n\nGracias por jugar!\nEstos son los resultados:"
+	mensaje_tesosoros: .asciiz "\nN° de tesoros encontrados: "
+	mensaje_dinero: .asciiz "\nDinero acumulado: "
+	mensaje_chacales: .asciiz "\nN° de chacales encontrados: "
+	progreso: .asciiz "\nProgreso:"
+	separacion: .asciiz "--------------------------------------------\n"
+	
+	casillas_descubiertas: .space 12   # Arreglo para casillas descubiertas
+	casillas_repetidas: .space 48   # Arreglo para contar repeticiones, Espacio para 12 enteros (12 * 4 bytes = 48 bytes)
+    	chacales_encontrados: .word 0   # Contador de chacales encontrados
+    	tesoros_encontrados: .word 0   # Contador de tesoros encontrados
+    	dinero_acumulado: .word 0   # Dinero acumulado
+    	turnos_consecutivos_repetidos: .word 0   # Contador de turnos repetidos
+    	max_turnos_repetidos_permitidos: .word 3   # Máximo de turnos repetidos permitidos
 .text
 .globl main
 
@@ -49,7 +68,7 @@ iniciar_copia:
 	la $s2, tesoros
 	
 copiar:
-	beq $t0, 12, salir
+	beq $t0, 12, Loop
 	addi $t0, $t0, 1
 	# Copiar indices chacales
 	bge $t0, 5, else
@@ -67,38 +86,160 @@ else:
 	addi $s2, $s2, 4
 	j copiar
 	
-salir:
-    # Llamar a la función imprimir_tablero
-    la $a0, tablero       # Pasar la dirección base de tablero a $a0
-   	li $a1, 12            # Pasar el tamaño del tablero a $a1
-    jal imprimir_tablero  # Llamar a la función imprimir_tablero
+
+#Nuevo inicio
+Loop:
+	#lw $t0, chacales_encontrados
+	#move $t0, $t0
+	
+	li $v0, 4
+    	la $a0, separacion
+    	syscall
+    	
+	li $v0, 4
+    	la $a0, nuevo_linea
+    	syscall
+    	
+    	#Seleccionando un número....
+   	#Codigo para elegir un número al azar 
+   	#Mostar número
+   	
+    	# Llamar a la función imprimir_tablero
+	la $a0, tablero       # Pasar la dirección base de tablero a $a0
+    	li $a1, 12            # Pasar el tamaño del tablero a $a1
+    	jal imprimir_tablero  # Llamar a la función imprimir_tablero
+   
+	jal mostrar_progreso
+
+    	validacion:
+    	li $v0, 4
+    	la $a0,nuevo_linea
+    	syscall
+    	
+    	li $v0, 4
+    	la $a0, pregunta
+    	syscall 
+    		
+    	li $v0, 8
+    	la $a0, respuesta
+    	li $a1, 3
+    	syscall
     
-    # imprimir chacales
-	li $t0, 0 
-	la $s0, tesoros
+    	# Comparar con "si"
+    	la $a0, respuesta         # Dirección de la entrada del usuario
+    	la $a1, si       # Dirección de la cadena "si"
+    	jal comparar_cadenas
+    	beq $v0, 1, continuar        # Si es igual, ir al fin del programa
+
+    	# Comparar con "no"
+    	la $a0, respuesta        # Dirección de la entrada del usuario
+    	la $a1, no       # Dirección de la cadena "no"
+    	jal comparar_cadenas
+    	beq $v0, 1, finalizar        # Si es igual, ir al fin del programa
+	
+	li $v0, 4
+    	la $a0, repetir
+    	syscall
+	
+	j validacion
+
+mostrar_progreso:
+	li $v0, 4
+    	la $a0, progreso
+    	syscall
+
+	li $v0, 4
+    	la $a0, mensaje_chacales
+    	syscall
+    	
+    	lw $t0, chacales_encontrados
 	li $v0, 1
-	
-imprimir:
-	beq $t0, 8, fin_imprimir
-	lw $a0, 0($s0)
-	syscall
-	addi $t0, $t0, 1
-	addi $s0, $s0, 4
-	j imprimir
-	
-fin_imprimir:
-	# Imprimir un salto de línea
-    la $a0, nuevo_linea   # Cargar la dirección de la cadena en $a0
-    li $v0, 4         # Código del servicio para imprimir cadena
-    syscall           # Llamada al sistema para imprimir la cadena
-    
-    # Terminar el programa
-    li $v0, 10            # Syscall para salir del programa
-    syscall
+    	move $a0, $t0
+    	syscall
     	
-  
+    	li $v0, 4
+    	la $a0, mensaje_dinero
+    	syscall
     	
-    	  	
+    	lw $t0, dinero_acumulado
+	li $v0, 1
+    	move $a0, $t0
+    	syscall
+
+	li $v0, 4
+    	la $a0, nuevo_linea
+    	syscall
+    	jr $ra
+    	
+continuar:
+	jal mostrar_progreso
+    	j Loop
+
+finalizar:
+	li $v0, 4
+    	la $a0, agradecimiento
+    	syscall
+
+	li $v0, 4
+    	la $a0, mensaje_tesosoros
+    	syscall
+    	
+    	lw $t0, tesoros_encontrados
+	li $v0, 1
+    	move $a0, $t0
+    	syscall
+    	
+	li $v0, 4
+    	la $a0, mensaje_chacales
+    	syscall
+    	
+    	lw $t0, chacales_encontrados
+	li $v0, 1
+    	move $a0, $t0
+    	syscall
+    	
+    	li $v0, 4
+    	la $a0, mensaje_dinero
+    	syscall
+    	
+    	lw $t0, dinero_acumulado
+	li $v0, 1
+    	move $a0, $t0
+    	syscall
+
+	li $v0, 4
+    	la $a0, nuevo_linea
+    	syscall
+    		
+    	li $v0, 10            # Syscall para salir del programa
+    	syscall
+	
+comparar_cadenas:
+    move $t0, $a0          # Dirección de la primera cadena en $t0
+    move $t1, $a1          # Dirección de la segunda cadena en $t1
+
+comparar_loop:
+    lb $t2, 0($t0)         # Cargar byte de la primera cadena en $t2
+    lb $t3, 0($t1)         # Cargar byte de la segunda cadena en $t3
+    bne $t2, $t3, cadenas_diferentes  # Si los bytes son diferentes, cadenas son diferentes
+    beq $t2, $zero, cadenas_iguales  # Si es el final de la cadena, son iguales
+    addi $t0, $t0, 1       # Avanzar al siguiente byte de la primera cadena
+    addi $t1, $t1, 1       # Avanzar al siguiente byte de la segunda cadena
+    j comparar_loop
+
+cadenas_diferentes:
+    li $v0, 0              # Indicar que son diferentes
+    jr $ra
+
+cadenas_iguales:
+    li $v0, 1              # Indicar que son iguales
+    jr $ra
+
+#Nuevo fin
+	  	
+	  		  	
+	  		  		  	
+	  		  		  		  		  	
 # Función para imprimir el tablero
 imprimir_tablero:
     # Argumentos:
@@ -113,6 +254,10 @@ imprimir_loop:
     move $a0, $t3         # Mover el valor a $a0 para imprimir
     li $v0, 11            # Syscall para imprimir un carácter
     syscall
+    li $v0, 4
+    la $a0, espacio
+    syscall
+    
     addi $t0, $t0, 1      # Incrementar el puntero de la dirección del tablero
     subi $t2, $t2, 1      # Decrementar el contador de casillas por imprimir
     j imprimir_loop       # Volver al inicio del bucle
